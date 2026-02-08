@@ -12,8 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->api(prepend: [
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+        // Exclude CSRF verification for API routes since we're using token authentication
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
         ]);
 
         $middleware->alias([

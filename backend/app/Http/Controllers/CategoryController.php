@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use App\Http\Resources\CategoryResource;
 
 /**
  * CategoryController handles CRUD operations for blog categories
@@ -24,7 +25,7 @@ class CategoryController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $categories
+                'data' => CategoryResource::collection($categories)
             ], 200);
 
         } catch (\Exception $e) {
@@ -77,7 +78,7 @@ class CategoryController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Category created successfully',
-                'data' => $category
+                'data' => new CategoryResource($category)
             ], 201);
 
         } catch (\Exception $e) {
@@ -110,7 +111,7 @@ class CategoryController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $category
+                'data' => new CategoryResource($category)
             ], 200);
 
         } catch (\Exception $e) {
@@ -173,7 +174,7 @@ class CategoryController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Category updated successfully',
-                'data' => $category
+                'data' => new CategoryResource($category)
             ], 200);
 
         } catch (\Exception $e) {

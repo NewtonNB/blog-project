@@ -22,14 +22,21 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email', 'max:255'],
-            'password' => ['required', 'string', 'min:6'],
-            'remember' => ['nullable', 'boolean'],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'exists:users,email',
+            ],
+            'password' => [
+                'required',
+                'string',
+            ],
         ];
     }
 
     /**
-     * Get custom error messages for validator errors.
+     * Get custom messages for validator errors.
      *
      * @return array<string, string>
      */
@@ -38,22 +45,18 @@ class LoginRequest extends FormRequest
         return [
             'email.required' => 'Email address is required.',
             'email.email' => 'Please enter a valid email address.',
-            'email.max' => 'Email address must not exceed 255 characters.',
+            'email.exists' => 'No account found with this email address.',
             'password.required' => 'Password is required.',
-            'password.min' => 'Password must be at least 6 characters.',
         ];
     }
 
     /**
-     * Get custom attributes for validator errors.
-     *
-     * @return array<string, string>
+     * Prepare the data for validation.
      */
-    public function attributes(): array
+    protected function prepareForValidation(): void
     {
-        return [
-            'email' => 'email address',
-            'password' => 'password',
-        ];
+        $this->merge([
+            'email' => strtolower($this->email),
+        ]);
     }
 }

@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import PhoneInput from 'react-phone-number-input';
+import { isValidPhoneNumber } from 'libphonenumber-js';
+import 'react-phone-number-input/style.css';
 import { useAuth } from '../contexts/AuthContext';
 
 const Register = () => {
@@ -11,35 +14,121 @@ const Register = () => {
     password_confirmation: '',
     bio: '',
   });
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [serverError, setServerError] = useState('');
   
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  // Client-side validation
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = 'Full name is required';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Name must be at least 2 characters';
+    } else if (!/^[a-zA-Z\s]+$/.test(formData.name)) {
+      newErrors.name = 'Name can only contain letters and spaces';
+    }
+
+    // Email validation
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email address is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    // Phone validation
+    if (!formData.phone) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!isValidPhoneNumber(formData.phone)) {
+      newErrors.phone = 'Please enter a valid phone number';
+    }
+
+    // Password validation
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    } else if (!/(?=.*[a-z])/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least one lowercase letter';
+    } else if (!/(?=.*[A-Z])/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least one uppercase letter';
+    } else if (!/(?=.*\d)/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least one number';
+    } else if (!/(?=.*[@$!%*?&])/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least one special character (@$!%*?&)';
+    }
+
+    // Password confirmation
+    if (!formData.password_confirmation) {
+      newErrors.password_confirmation = 'Please confirm your password';
+    } else if (formData.password !== formData.password_confirmation) {
+      newErrors.password_confirmation = 'Passwords do not match';
+    }
+
+    // Bio validation (optional but has max length)
+    if (formData.bio && formData.bio.length > 1000) {
+      newErrors.bio = 'Bio cannot exceed 1000 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: '',
+      }));
+    }
+  };
+
+  const handlePhoneChange = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      phone: value || '',
+    }));
+    // Clear phone error when user changes phone
+    if (errors.phone) {
+      setErrors(prev => ({
+        ...prev,
+        phone: '',
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setServerError('');
 
-    if (formData.password !== formData.password_confirmation) {
-      setError('Passwords do not match');
-      setLoading(false);
+    // Client-side validation
+    if (!validateForm()) {
       return;
     }
+
+    setLoading(true);
 
     try {
       await register(formData);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || 'Registration failed');
+      // Handle server-side validation errors
+      if (err.response?.data?.errors) {
+        setErrors(err.response.data.errors);
+      } else {
+        setServerError(err.message || 'Registration failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -51,16 +140,17 @@ const Register = () => {
         Create Your Account
       </h2>
 
-      {error && (
+      {serverError && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
+          {serverError}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Name Field */}
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-            Full Name
+            Full Name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -68,15 +158,22 @@ const Register = () => {
             name="name"
             value={formData.name}
             onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+              errors.name
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-primary-500'
+            }`}
             placeholder="Enter your full name"
           />
+          {errors.name && (
+            <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+          )}
         </div>
 
+        {/* Email Field */}
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-            Email Address
+            Email Address <span className="text-red-500">*</span>
           </label>
           <input
             type="email"
@@ -84,31 +181,45 @@ const Register = () => {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+              errors.email
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-primary-500'
+            }`}
             placeholder="Enter your email"
           />
+          {errors.email && (
+            <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+          )}
         </div>
 
+        {/* Phone Field with International Input */}
         <div>
           <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-            Phone Number
+            Phone Number <span className="text-red-500">*</span>
           </label>
-          <input
-            type="tel"
-            id="phone"
-            name="phone"
+          <PhoneInput
+            international
+            defaultCountry="UG"
             value={formData.phone}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Enter your phone number"
+            onChange={handlePhoneChange}
+            className={`w-full ${
+              errors.phone ? 'phone-input-error' : ''
+            }`}
+            placeholder="Enter phone number"
           />
+          {errors.phone && (
+            <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+          )}
+          <p className="mt-1 text-xs text-gray-500">
+            Include country code (e.g., +1 for US)
+          </p>
         </div>
 
+        {/* Password Field */}
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-            Password
+            Password <span className="text-red-500">*</span>
           </label>
           <input
             type="password"
@@ -116,16 +227,25 @@ const Register = () => {
             name="password"
             value={formData.password}
             onChange={handleChange}
-            required
-            minLength={8}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+              errors.password
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-primary-500'
+            }`}
             placeholder="Enter your password"
           />
+          {errors.password && (
+            <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+          )}
+          <p className="mt-1 text-xs text-gray-500">
+            Must be 8+ characters with uppercase, lowercase, number, and special character
+          </p>
         </div>
 
+        {/* Confirm Password Field */}
         <div>
           <label htmlFor="password_confirmation" className="block text-sm font-medium text-gray-700 mb-2">
-            Confirm Password
+            Confirm Password <span className="text-red-500">*</span>
           </label>
           <input
             type="password"
@@ -133,13 +253,19 @@ const Register = () => {
             name="password_confirmation"
             value={formData.password_confirmation}
             onChange={handleChange}
-            required
-            minLength={8}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+              errors.password_confirmation
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-primary-500'
+            }`}
             placeholder="Confirm your password"
           />
+          {errors.password_confirmation && (
+            <p className="mt-1 text-sm text-red-600">{errors.password_confirmation}</p>
+          )}
         </div>
 
+        {/* Bio Field */}
         <div>
           <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
             Bio (Optional)
@@ -150,15 +276,27 @@ const Register = () => {
             value={formData.bio}
             onChange={handleChange}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            maxLength={1000}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+              errors.bio
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-primary-500'
+            }`}
             placeholder="Tell us about yourself"
           />
+          {errors.bio && (
+            <p className="mt-1 text-sm text-red-600">{errors.bio}</p>
+          )}
+          <p className="mt-1 text-xs text-gray-500 text-right">
+            {formData.bio.length}/1000 characters
+          </p>
         </div>
 
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? 'Creating Account...' : 'Register'}
         </button>

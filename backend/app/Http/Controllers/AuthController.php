@@ -12,6 +12,9 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\URL;
 use App\Notifications\SendOtpCode;
 use Carbon\Carbon;
+use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\LoginRequest;
+use App\Http\Resources\UserResource;
 
 /**
  * AuthController handles user authentication
@@ -22,37 +25,19 @@ class AuthController extends Controller
     /**
      * Register a new user
      */
-    public function register(Request $request): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
-        // Validate the incoming request data
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'phone' => 'required|string|max:20',
-            'password' => 'required|string|min:8|confirmed',
-            'bio' => 'nullable|string|max:1000',
-        ]);
-
-        // Return validation errors if any
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation errors',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
             // Generate OTP code
             $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             
-            // Create new user with encrypted password
+            // Create new user with validated data
             $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'password' => Hash::make($request->password),
-                'bio' => $request->bio,
+                'name' => $request->validated('name'),
+                'email' => $request->validated('email'),
+                'phone' => $request->validated('phone'),
+                'password' => Hash::make($request->validated('password')),
+                'bio' => $request->validated('bio'),
                 'otp_code' => $otpCode,
                 'otp_expires_at' => Carbon::now()->addMinutes(10),
             ]);
@@ -67,7 +52,7 @@ class AuthController extends Controller
                 'success' => true,
                 'message' => 'User registered successfully. Please check your email for the verification code.',
                 'data' => [
-                    'user' => $user,
+                    'user' => new UserResource($user),
                     'token' => $token,
                     'token_type' => 'Bearer',
                     'email_verified' => false
@@ -86,28 +71,14 @@ class AuthController extends Controller
     /**
      * Login user and create token
      */
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        // Validate login credentials
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => 'required|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation errors',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
             // Find user by email
-            $user = User::where('email', $request->email)->first();
+            $user = User::where('email', $request->validated('email'))->first();
 
-            // Check if user exists and password is correct
-            if (!$user || !Hash::check($request->password, $user->password)) {
+            // Check if password is correct
+            if (!Hash::check($request->validated('password'), $user->password)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid credentials'
@@ -130,7 +101,7 @@ class AuthController extends Controller
                 'success' => true,
                 'message' => 'Login successful',
                 'data' => [
-                    'user' => $user,
+                    'user' => new UserResource($user),
                     'token' => $token,
                     'token_type' => 'Bearer'
                 ]
@@ -176,7 +147,7 @@ class AuthController extends Controller
         try {
             return response()->json([
                 'success' => true,
-                'data' => $request->user()
+                'data' => new UserResource($request->user())
             ], 200);
 
         } catch (\Exception $e) {

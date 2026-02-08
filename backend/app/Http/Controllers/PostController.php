@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use App\Http\Resources\PostResource;
+use App\Http\Resources\PostCollection;
+use App\Http\Requests\StorePostRequest;
+use App\Http\Requests\UpdatePostRequest;
 
 /**
  * PostController handles CRUD operations for blog posts
@@ -49,7 +52,7 @@ class PostController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $posts
+                'data' => new PostCollection($posts)
             ], 200);
 
         } catch (\Exception $e) {
@@ -64,27 +67,8 @@ class PostController extends Controller
     /**
      * Store a newly created post
      */
-    public function store(Request $request): JsonResponse
+    public function store(StorePostRequest $request): JsonResponse
     {
-        // Validate the incoming request data
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'excerpt' => 'nullable|string|max:500',
-            'featured_image' => 'nullable|string|max:255',
-            'status' => 'required|in:draft,published',
-            'category_id' => 'required|exists:categories,id',
-            'published_at' => 'nullable|date',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation errors',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
             // Generate unique slug from title
             $slug = Str::slug($request->title);
@@ -118,7 +102,7 @@ class PostController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Post created successfully',
-                'data' => $post
+                'data' => new PostResource($post)
             ], 201);
 
         } catch (\Exception $e) {
@@ -149,7 +133,7 @@ class PostController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $post
+                'data' => new PostResource($post)
             ], 200);
 
         } catch (\Exception $e) {
@@ -164,7 +148,7 @@ class PostController extends Controller
     /**
      * Update the specified post
      */
-    public function update(Request $request, string $slug): JsonResponse
+    public function update(UpdatePostRequest $request, string $slug): JsonResponse
     {
         // Find the post
         $post = Post::where('slug', $slug)->first();
@@ -182,25 +166,6 @@ class PostController extends Controller
                 'success' => false,
                 'message' => 'Unauthorized to update this post'
             ], 403);
-        }
-
-        // Validate the incoming request data
-        $validator = Validator::make($request->all(), [
-            'title' => 'sometimes|required|string|max:255',
-            'content' => 'sometimes|required|string',
-            'excerpt' => 'nullable|string|max:500',
-            'featured_image' => 'nullable|string|max:255',
-            'status' => 'sometimes|required|in:draft,published',
-            'category_id' => 'sometimes|required|exists:categories,id',
-            'published_at' => 'nullable|date',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation errors',
-                'errors' => $validator->errors()
-            ], 422);
         }
 
         try {
@@ -234,7 +199,7 @@ class PostController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Post updated successfully',
-                'data' => $post
+                'data' => new PostResource($post)
             ], 200);
 
         } catch (\Exception $e) {
