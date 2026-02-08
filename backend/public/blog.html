@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Blog UI - Redirect</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            padding: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 10px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .btn:hover { background: #2563eb; }
+        .api-link { 
+            color: #fbbf24; 
+            text-decoration: none; 
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Your Blog System is Running!</h1>
+        <p>Laravel Backend: ✅ Working</p>
+        <p>API Endpoints: ✅ Available</p>
+        
+        <h2>Next Steps:</h2>
+        
+        <a href="/api/posts" class="btn">📊 View API Data</a>
+        
+        <p style="margin-top: 2rem;">
+            <strong>To see your Blog UI:</strong><br>
+            Navigate to: <code>C:\xampp\htdocs\blog-api\blog-frontend\instant-ui.html</code><br>
+            And double-click to open it!
+        </p>
+        
+        <h3>Quick API Test:</h3>
+        <p>API Posts: <a href="/api/posts" class="api-link">http://127.0.0.1:8000/api/posts</a></p>
+        <p>API Categories: <a href="/api/categories" class="api-link">http://127.0.0.1:8000/api/categories</a></p>
+        
+        <div style="margin-top: 2rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 6px;">
+            <h4>Your Blog Posts Count:</h4>
+            <div id="post-count">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        // Show post count
+        fetch('/api/posts')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('post-count').innerHTML = 
+                        `📝 ${data.data.total} posts found in your blog!`;
+                } else {
+                    document.getElementById('post-count').innerHTML = '❌ Error loading posts';
+                }
+            })
+            .catch(error => {
+                document.getElementById('post-count').innerHTML = '❌ API connection failed';
+            });
+    </script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+# Laravel Backend .gitignore
+
+# Environment files
+.env
+.env.backup
+.env.production
+
+# Dependencies
+/vendor/
+/node_modules/
+
+# Laravel specific
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+/storage/*.key
+/storage/app/*
+!/storage/app/.gitignore
+!/storage/app/public/
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/testing/*
+!/storage/framework/testing/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/logs/*
+!/storage/logs/.gitignore
+
+# Database
+*.sqlite
+*.sqlite-journal
+/database/database.sqlite
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Compiled files
+/public/hot
+/public/storage
+/public/build
+/public/css/app.css
+/public/js/app.js
+
+# Testing
+.phpunit.result.cache
+.phpunit.cache
+
+# Logs
+npm-debug.log
+yarn-error.log
+*.log
+
+# Temporary files
+*.swp
+*.swo
+*~
+
+# Auth files
+auth.json
+
+# Documentation (optional)
+*_DOCUMENTATION.md
+*_SETUP*.md
+*_GUIDE.md
+*_COMPLETE.md
+*_SUCCESS.md
+*_QUICK_START.md
+*_INSTRUCTIONS.md
+*_NOW.txt
+
+# Keep important docs
+!README.md
+!API_DOCUMENTATION.md
