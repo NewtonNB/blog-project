@@ -3,29 +3,44 @@ import { Link } from 'react-router-dom';
 import { postsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import Pagination from '../components/Pagination';
+import { showConfirm, showSuccess, showError } from '../utils/sweetAlert';
+import { FiPlus, FiFileText, FiCheckCircle, FiEdit, FiEye, FiTrash2 } from 'react-icons/fi';
+import { HiOutlineDocumentText } from 'react-icons/hi';
 
 const Dashboard = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const { user } = useAuth();
 
   useEffect(() => {
     fetchUserPosts();
-  }, [filter]);
+  }, [filter, currentPage]);
 
   const fetchUserPosts = async () => {
     try {
       setLoading(true);
       const response = await postsAPI.getAll({
         status: filter === 'all' ? undefined : filter,
-        per_page: 50,
+        per_page: 10,
+        page: currentPage,
       });
 
       if (response.success) {
-        // Filter posts by current user (since API doesn't have user filter)
-        const userPosts = response.data.data.filter(post => post.user.id === user?.id);
+        // Filter posts by current user
+        const allPosts = response.data.data || response.data;
+        const userPosts = Array.isArray(allPosts) 
+          ? allPosts.filter(post => post.user?.id === user?.id)
+          : [];
+        
         setPosts(userPosts);
+        
+        // Calculate total pages based on filtered results
+        const meta = response.data.meta;
+        setTotalPages(meta?.total_pages || 1);
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -35,15 +50,20 @@ const Dashboard = () => {
   };
 
   const handleDelete = async (slug) => {
-    if (!window.confirm('Are you sure you want to delete this post?')) {
-      return;
-    }
+    const result = await showConfirm(
+      'Move to Trash?',
+      'This post will be moved to trash. You can restore it later.',
+      'Yes, move it!'
+    );
 
-    try {
-      await postsAPI.delete(slug);
-      setPosts(posts.filter(post => post.slug !== slug));
-    } catch (error) {
-      alert('Failed to delete post');
+    if (result.isConfirmed) {
+      try {
+        await postsAPI.delete(slug);
+        setPosts(posts.filter(post => post.slug !== slug));
+        showSuccess('Moved to Trash!', 'Post has been moved to trash successfully.');
+      } catch (error) {
+        showError('Failed!', 'Failed to delete post. Please try again.');
+      }
     }
   };
 
@@ -60,63 +80,95 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      {/* Header Section */}
+      <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 animate-fade-in">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold gradient-text">Dashboard</h1>
           <p className="text-gray-600 mt-2">Manage your blog posts</p>
         </div>
         <Link
           to="/create-post"
-          className="bg-primary-600 text-white px-6 py-3 rounded-md hover:bg-primary-700 transition-colors font-medium"
+          className="btn-primary flex items-center gap-2"
         >
+          <FiPlus className="w-5 h-5" />
           Create New Post
         </Link>
+      </section>
+
+      {/* Stats Section */}
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <FiFileText className="w-5 h-5 text-blue-600" />
+          Overview
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up">
+          <div className="glass-effect p-6 rounded-xl shadow-soft card-hover">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-medium text-gray-700">Total Posts</h3>
+              <FiFileText className="w-8 h-8 text-blue-600" />
+            </div>
+            <p className="text-4xl font-bold gradient-text">{posts.length}</p>
+          </div>
+          <div className="glass-effect p-6 rounded-xl shadow-soft card-hover">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-medium text-gray-700">Published</h3>
+              <FiCheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <p className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              {posts.filter(post => post.status === 'published').length}
+            </p>
+          </div>
+          <div className="glass-effect p-6 rounded-xl shadow-soft card-hover">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-medium text-gray-700">Drafts</h3>
+              <HiOutlineDocumentText className="w-8 h-8 text-yellow-600" />
+            </div>
+            <p className="text-4xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
+              {posts.filter(post => post.status === 'draft').length}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="relative mb-8">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t-2 border-gray-200"></div>
+        </div>
+        <div className="relative flex justify-center">
+          <span className="bg-white px-4 text-sm text-gray-500 font-medium">
+            Your Posts
+          </span>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Total Posts</h3>
-          <p className="text-3xl font-bold text-primary-600">{posts.length}</p>
+      {/* Filter Section */}
+      <section className="mb-6">
+        <div className="flex space-x-2">
+          {['all', 'published', 'draft'].map((status) => (
+            <button
+              key={status}
+              onClick={() => setFilter(status)}
+              className={`px-4 py-2 rounded-lg font-medium capitalize transition-all duration-300 ${
+                filter === status
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                  : 'btn-secondary'
+              }`}
+            >
+              {status}
+            </button>
+          ))}
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Published</h3>
-          <p className="text-3xl font-bold text-green-600">
-            {posts.filter(post => post.status === 'published').length}
-          </p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Drafts</h3>
-          <p className="text-3xl font-bold text-yellow-600">
-            {posts.filter(post => post.status === 'draft').length}
-          </p>
-        </div>
-      </div>
+      </section>
 
-      {/* Filter Tabs */}
-      <div className="flex space-x-1 mb-6">
-        {['all', 'published', 'draft'].map((status) => (
-          <button
-            key={status}
-            onClick={() => setFilter(status)}
-            className={`px-4 py-2 rounded-md font-medium capitalize transition-colors ${
-              filter === status
-                ? 'bg-primary-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            {status}
-          </button>
-        ))}
-      </div>
-
-      {/* Posts List */}
+      {/* Posts List Section */}
+      <section>
       {posts.length > 0 ? (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+        <>
+          <div className="glass-effect rounded-xl shadow-soft overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -143,7 +195,7 @@ const Dashboard = () => {
                       <div>
                         <Link
                           to={`/post/${post.slug}`}
-                          className="text-sm font-medium text-gray-900 hover:text-primary-600"
+                          className="text-sm font-medium text-gray-900 hover:text-transparent hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 hover:bg-clip-text transition-all"
                         >
                           {post.title}
                         </Link>
@@ -172,23 +224,26 @@ const Dashboard = () => {
                       {formatDate(post.published_at || post.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-3">
                         <Link
                           to={`/post/${post.slug}`}
-                          className="text-primary-600 hover:text-primary-900"
+                          className="text-blue-600 hover:text-blue-800 font-medium transition-colors flex items-center gap-1"
                         >
+                          <FiEye className="w-4 h-4" />
                           View
                         </Link>
                         <Link
                           to={`/edit-post/${post.slug}`}
-                          className="text-indigo-600 hover:text-indigo-900"
+                          className="text-purple-600 hover:text-purple-800 font-medium transition-colors flex items-center gap-1"
                         >
+                          <FiEdit className="w-4 h-4" />
                           Edit
                         </Link>
                         <button
                           onClick={() => handleDelete(post.slug)}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-red-600 hover:text-red-800 font-medium transition-colors flex items-center gap-1"
                         >
+                          <FiTrash2 className="w-4 h-4" />
                           Delete
                         </button>
                       </div>
@@ -199,17 +254,26 @@ const Dashboard = () => {
             </table>
           </div>
         </div>
+
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+        </>
       ) : (
-        <div className="text-center py-12 bg-white rounded-lg shadow-md">
+        <div className="text-center py-12 glass-effect rounded-xl shadow-soft">
           <p className="text-gray-500 text-lg mb-4">No posts found.</p>
           <Link
             to="/create-post"
-            className="text-primary-600 hover:text-primary-700 font-medium"
+            className="gradient-text font-semibold hover:opacity-80 transition-opacity"
           >
             Create your first post →
           </Link>
         </div>
       )}
+      </section>
     </div>
   );
 };

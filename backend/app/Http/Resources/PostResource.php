@@ -25,6 +25,7 @@ class PostResource extends JsonResource
             'published_at' => $this->published_at?->toISOString(),
             'user' => new UserResource($this->whenLoaded('user')),
             'category' => new CategoryResource($this->whenLoaded('category')),
+            'comments_count' => $this->comments()->count(),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

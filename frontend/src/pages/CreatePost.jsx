@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { postsAPI, categoriesAPI } from '../services/api';
+import { showSuccess } from '../utils/sweetAlert';
+import { FiImage, FiX, FiSave, FiXCircle } from 'react-icons/fi';
 
 const CreatePost = () => {
   const [formData, setFormData] = useState({
@@ -206,7 +208,10 @@ const CreatePost = () => {
 
       const response = await postsAPI.create(postData);
       if (response.success) {
-        navigate(`/post/${response.data.slug}`);
+        showSuccess('Post Created!', 'Your post has been created successfully.');
+        setTimeout(() => {
+          navigate(`/post/${response.data.slug}`);
+        }, 1500);
       }
     } catch (err) {
       if (err.response?.data?.errors) {
@@ -220,10 +225,13 @@ const CreatePost = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-white rounded-lg shadow-md p-8">
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="glass-effect rounded-xl shadow-soft p-8 animate-fade-in">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Create New Post</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold gradient-text flex items-center gap-3">
+            <FiImage className="w-8 h-8" />
+            Create New Post
+          </h1>
           <p className="text-gray-600 mt-2">Share your thoughts with the world</p>
         </div>
 
@@ -246,10 +254,10 @@ const CreatePost = () => {
               value={formData.title}
               onChange={handleChange}
               maxLength={255}
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+              className={`input-field ${
                 errors.title
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-primary-500'
+                  ? 'border-red-500 focus:border-red-500 focus:ring-red-100'
+                  : ''
               }`}
               placeholder="Enter an engaging title..."
             />
@@ -344,9 +352,7 @@ const CreatePost = () => {
                   onClick={removeImage}
                   className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <FiX className="w-5 h-5" />
                 </button>
               </div>
             )}
@@ -431,19 +437,21 @@ const CreatePost = () => {
           </div>
 
           {/* Submit Buttons */}
-          <div className="flex justify-end space-x-4 pt-6 border-t">
+          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 pt-6 border-t">
             <button
               type="button"
               onClick={() => navigate('/dashboard')}
-              className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+              className="btn-secondary flex items-center justify-center gap-2"
             >
+              <FiXCircle className="w-5 h-5" />
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
+              <FiSave className="w-5 h-5" />
               {loading ? 'Creating...' : 'Create Post'}
             </button>
           </div>

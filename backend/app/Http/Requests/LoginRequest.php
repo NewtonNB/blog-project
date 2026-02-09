@@ -26,7 +26,6 @@ class LoginRequest extends FormRequest
                 'required',
                 'string',
                 'email',
-                'exists:users,email',
             ],
             'password' => [
                 'required',
@@ -45,7 +44,6 @@ class LoginRequest extends FormRequest
         return [
             'email.required' => 'Email address is required.',
             'email.email' => 'Please enter a valid email address.',
-            'email.exists' => 'No account found with this email address.',
             'password.required' => 'Password is required.',
         ];
     }

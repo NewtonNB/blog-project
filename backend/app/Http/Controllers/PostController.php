@@ -234,17 +234,123 @@ class PostController extends Controller
                 ], 403);
             }
 
-            $post->delete();
+            $post->delete(); // Soft delete
 
             return response()->json([
                 'success' => true,
-                'message' => 'Post deleted successfully'
+                'message' => 'Post moved to trash successfully'
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete post',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get trashed posts for authenticated user
+     */
+    public function trashed(Request $request): JsonResponse
+    {
+        try {
+            $posts = Post::onlyTrashed()
+                ->with(['user:id,name,email', 'category:id,name,slug'])
+                ->where('user_id', $request->user()->id)
+                ->latest('deleted_at')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => PostResource::collection($posts)
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch trashed posts',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Restore a trashed post
+     */
+    public function restore(Request $request, string $slug): JsonResponse
+    {
+        try {
+            $post = Post::onlyTrashed()->where('slug', $slug)->first();
+
+            if (!$post) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Post not found in trash'
+                ], 404);
+            }
+
+            // Check if user owns the post
+            if ($post->user_id !== $request->user()->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized to restore this post'
+                ], 403);
+            }
+
+            $post->restore();
+            $post->load(['user:id,name,email', 'category:id,name,slug']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Post restored successfully',
+                'data' => new PostResource($post)
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore post',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Permanently delete a trashed post
+     */
+    public function forceDelete(Request $request, string $slug): JsonResponse
+    {
+        try {
+            $post = Post::onlyTrashed()->where('slug', $slug)->first();
+
+            if (!$post) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Post not found in trash'
+                ], 404);
+            }
+
+            // Check if user owns the post
+            if ($post->user_id !== $request->user()->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized to permanently delete this post'
+                ], 403);
+            }
+
+            $post->forceDelete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Post permanently deleted'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to permanently delete post',
                 'error' => $e->getMessage()
             ], 500);
         }

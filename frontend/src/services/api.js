@@ -94,6 +94,22 @@ export const postsAPI = {
     const response = await api.delete(`/posts/${slug}`);
     return response.data;
   },
+
+  // Trash operations
+  getTrashed: async () => {
+    const response = await api.get('/posts/trash/all');
+    return response.data;
+  },
+
+  restore: async (slug) => {
+    const response = await api.post(`/posts/trash/${slug}/restore`);
+    return response.data;
+  },
+
+  forceDelete: async (slug) => {
+    const response = await api.delete(`/posts/trash/${slug}/force`);
+    return response.data;
+  },
 };
 
 // Categories API
@@ -120,6 +136,29 @@ export const categoriesAPI = {
 
   delete: async (slug) => {
     const response = await api.delete(`/categories/${slug}`);
+    return response.data;
+  },
+};
+
+// Comments API
+export const commentsAPI = {
+  getAll: async (postSlug) => {
+    const response = await api.get(`/posts/${postSlug}/comments`);
+    return response.data;
+  },
+
+  create: async (postSlug, commentData) => {
+    const response = await api.post(`/posts/${postSlug}/comments`, commentData);
+    return response.data;
+  },
+
+  update: async (commentId, commentData) => {
+    const response = await api.put(`/comments/${commentId}`, commentData);
+    return response.data;
+  },
+
+  delete: async (commentId) => {
+    const response = await api.delete(`/comments/${commentId}`);
     return response.data;
   },
 };

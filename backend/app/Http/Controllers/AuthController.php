@@ -77,21 +77,20 @@ class AuthController extends Controller
             // Find user by email
             $user = User::where('email', $request->validated('email'))->first();
 
-            // Check if password is correct
-            if (!Hash::check($request->validated('password'), $user->password)) {
+            // Check if user exists (should always exist due to validation, but double-check)
+            if (!$user) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid credentials'
                 ], 401);
             }
 
-            // Check if email is verified
-            if (!$user->hasVerifiedEmail()) {
+            // Check if password is correct
+            if (!Hash::check($request->validated('password'), $user->password)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Please verify your email address before logging in.',
-                    'email_verified' => false
-                ], 403);
+                    'message' => 'Invalid credentials'
+                ], 401);
             }
 
             // Create API token

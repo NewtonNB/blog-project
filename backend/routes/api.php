@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CommentController;
 
 /**
  * API Routes for Blog Application
@@ -29,6 +30,9 @@ Route::get('/posts/{slug}', [PostController::class, 'show']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{slug}', [CategoryController::class, 'show']);
 
+// Public comment routes
+Route::get('/posts/{slug}/comments', [CommentController::class, 'index']);
+
 // Protected routes (authentication required)
 Route::middleware('auth:sanctum')->group(function () {
     
@@ -43,6 +47,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [PostController::class, 'store']);
         Route::put('/{slug}', [PostController::class, 'update']);
         Route::delete('/{slug}', [PostController::class, 'destroy']);
+        
+        // Trash routes
+        Route::get('/trash/all', [PostController::class, 'trashed']);
+        Route::post('/trash/{slug}/restore', [PostController::class, 'restore']);
+        Route::delete('/trash/{slug}/force', [PostController::class, 'forceDelete']);
     });
     
     // Category management routes (authenticated users only)
@@ -50,6 +59,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [CategoryController::class, 'store']);
         Route::put('/{slug}', [CategoryController::class, 'update']);
         Route::delete('/{slug}', [CategoryController::class, 'destroy']);
+    });
+    
+    // Comment management routes (authenticated users only)
+    Route::prefix('posts/{slug}/comments')->group(function () {
+        Route::post('/', [CommentController::class, 'store']);
+    });
+    
+    Route::prefix('comments')->group(function () {
+        Route::put('/{id}', [CommentController::class, 'update']);
+        Route::delete('/{id}', [CommentController::class, 'destroy']);
     });
     
     // Get authenticated user info

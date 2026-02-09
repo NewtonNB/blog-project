@@ -3,6 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { postsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import Comments from '../components/Comments';
+import { showConfirm, showSuccess, showError } from '../utils/sweetAlert';
+import { FiEdit, FiTrash2, FiArrowLeft, FiCalendar, FiUser, FiTag } from 'react-icons/fi';
 
 const PostDetail = () => {
   const { slug } = useParams();
@@ -35,15 +38,24 @@ const PostDetail = () => {
   };
 
   const handleDelete = async () => {
-    if (!post || !window.confirm('Are you sure you want to delete this post?')) {
-      return;
-    }
+    if (!post) return;
 
-    try {
-      await postsAPI.delete(post.slug);
-      navigate('/dashboard');
-    } catch (err) {
-      alert('Failed to delete post');
+    const result = await showConfirm(
+      'Move to Trash?',
+      'This post will be moved to trash. You can restore it later.',
+      'Yes, move it!'
+    );
+
+    if (result.isConfirmed) {
+      try {
+        await postsAPI.delete(post.slug);
+        showSuccess('Moved to Trash!', 'Post has been moved to trash successfully.');
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1500);
+      } catch (err) {
+        showError('Failed!', 'Failed to delete post. Please try again.');
+      }
     }
   };
 
@@ -74,29 +86,33 @@ const PostDetail = () => {
   const canEdit = user && user.id === post.user.id;
 
   return (
-    <article className="max-w-4xl mx-auto">
+    <article className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
-      <header className="mb-8">
-        <div className="flex items-center text-sm text-gray-500 mb-4">
+      <header className="mb-8 animate-fade-in">
+        <div className="flex items-center text-sm text-gray-500 mb-4 flex-wrap gap-2">
           <Link
             to={`/category/${post.category.slug}`}
-            className="text-primary-600 hover:text-primary-700 font-medium"
+            className="gradient-text font-semibold hover:opacity-80 transition-opacity flex items-center gap-1"
           >
+            <FiTag className="w-4 h-4" />
             {post.category.name}
           </Link>
           <span className="mx-2">•</span>
-          <span>{formatDate(post.published_at || post.created_at)}</span>
+          <span className="flex items-center gap-1">
+            <FiCalendar className="w-4 h-4" />
+            {formatDate(post.published_at || post.created_at)}
+          </span>
           {post.status === 'draft' && (
             <>
               <span className="mx-2">•</span>
-              <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-medium">
+              <span className="bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">
                 Draft
               </span>
             </>
           )}
         </div>
 
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold gradient-text mb-6">
           {post.title}
         </h1>
 
@@ -106,14 +122,18 @@ const PostDetail = () => {
           </p>
         )}
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center">
-            {post.user.avatar && (
+            {post.user.avatar ? (
               <img
                 src={post.user.avatar}
                 alt={post.user.name}
                 className="w-12 h-12 rounded-full mr-4"
               />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center mr-4">
+                <FiUser className="w-6 h-6 text-white" />
+              </div>
             )}
             <div>
               <p className="font-medium text-gray-900">{post.user.name}</p>
@@ -124,17 +144,19 @@ const PostDetail = () => {
           </div>
 
           {canEdit && (
-            <div className="flex space-x-2">
+            <div className="flex space-x-3">
               <Link
                 to={`/edit-post/${post.slug}`}
-                className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors"
+                className="btn-primary flex items-center gap-2"
               >
+                <FiEdit className="w-4 h-4" />
                 Edit
               </Link>
               <button
                 onClick={handleDelete}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-medium px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
               >
+                <FiTrash2 className="w-4 h-4" />
                 Delete
               </button>
             </div>
@@ -144,37 +166,42 @@ const PostDetail = () => {
 
       {/* Featured Image */}
       {post.featured_image && (
-        <div className="mb-8">
+        <div className="mb-8 animate-slide-up">
           <img
             src={post.featured_image}
             alt={post.title}
-            className="w-full h-64 md:h-96 object-cover rounded-lg"
+            className="w-full h-64 md:h-96 object-cover rounded-xl shadow-soft"
           />
         </div>
       )}
 
       {/* Content */}
-      <div className="prose prose-lg max-w-none mb-8">
+      <div className="prose prose-lg max-w-none mb-8 glass-effect p-6 sm:p-8 rounded-xl shadow-soft">
         <div
           dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, '<br>') }}
         />
       </div>
 
       {/* Footer */}
-      <footer className="border-t pt-8">
-        <div className="flex justify-between items-center">
+      <footer className="border-t pt-8 mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <Link
             to="/"
-            className="text-primary-600 hover:text-primary-700 font-medium"
+            className="gradient-text font-semibold hover:opacity-80 transition-opacity flex items-center gap-2"
           >
-            ← Back to Home
+            <FiArrowLeft className="w-4 h-4" />
+            Back to Home
           </Link>
           
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 flex items-center gap-1">
+            <FiCalendar className="w-4 h-4" />
             Last updated: {formatDate(post.updated_at)}
           </div>
         </div>
       </footer>
+
+      {/* Comments Section */}
+      <Comments postSlug={post.slug} />
     </article>
   );
 };
