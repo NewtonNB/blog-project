@@ -70,6 +70,23 @@ class PostController extends Controller
     public function store(StorePostRequest $request): JsonResponse
     {
         try {
+            // Check if user is authenticated
+            if (!$request->user()) {
+                \Log::error('Post creation failed: No authenticated user');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required. Please login again.',
+                    'error' => 'User not authenticated'
+                ], 401);
+            }
+
+            \Log::info('Creating post', [
+                'user_id' => $request->user()->id,
+                'user_email' => $request->user()->email,
+                'title' => $request->title,
+                'category_id' => $request->category_id,
+            ]);
+
             // Generate unique slug from title
             $slug = Str::slug($request->title);
             $originalSlug = $slug;
@@ -96,6 +113,8 @@ class PostController extends Controller
                 'category_id' => $request->category_id,
             ]);
 
+            \Log::info('Post created successfully', ['post_id' => $post->id]);
+
             // Load relationships
             $post->load(['user:id,name,email', 'category:id,name,slug']);
 
@@ -106,10 +125,16 @@ class PostController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
+            \Log::error('Failed to create post', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create post',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
             ], 500);
         }
     }

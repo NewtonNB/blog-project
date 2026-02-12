@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { postsAPI, categoriesAPI } from '../services/api';
 import PostCard from '../components/PostCard';
 import LoadingSpinner from '../components/LoadingSpinner';
-import Pagination from '../components/Pagination';
+import PaginationNew from '../components/PaginationNew';
 import { FiSearch } from 'react-icons/fi';
 
 const Home = () => {
@@ -128,7 +128,7 @@ const Home = () => {
         {/* Search Form */}
         <form onSubmit={handleSearch} className="flex gap-2 w-full">
           <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <FiSearch className="h-5 w-5 text-gray-400" />
             </div>
             <input
@@ -136,7 +136,7 @@ const Home = () => {
               placeholder="Search posts..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-field pl-12 text-sm sm:text-base"
+              className="input-field-with-icon text-sm sm:text-base"
             />
           </div>
           <button
@@ -200,7 +200,7 @@ const Home = () => {
           </div>
 
           {/* Pagination */}
-          <Pagination
+          <PaginationNew
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}

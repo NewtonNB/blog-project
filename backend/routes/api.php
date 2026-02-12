@@ -78,6 +78,20 @@ Route::middleware('auth:sanctum')->group(function () {
             'data' => $request->user()
         ]);
     });
+    
+    // Debug endpoint to check authentication
+    Route::get('/debug/auth', function (Request $request) {
+        return response()->json([
+            'success' => true,
+            'user' => $request->user(),
+            'user_id' => $request->user() ? $request->user()->id : null,
+            'token' => $request->bearerToken(),
+            'headers' => [
+                'authorization' => $request->header('Authorization'),
+                'accept' => $request->header('Accept'),
+            ]
+        ]);
+    });
 });
 
 /**

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { postsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
-import Pagination from '../components/Pagination';
+import PaginationNew from '../components/PaginationNew';
 import { showConfirm, showSuccess, showError } from '../utils/sweetAlert';
 import { FiPlus, FiFileText, FiCheckCircle, FiEdit, FiEye, FiTrash2 } from 'react-icons/fi';
 import { HiOutlineDocumentText } from 'react-icons/hi';
@@ -256,7 +256,7 @@ const Dashboard = () => {
         </div>
 
         {/* Pagination */}
-        <Pagination
+        <PaginationNew
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}

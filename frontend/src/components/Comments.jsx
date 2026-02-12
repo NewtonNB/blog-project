@@ -1,10 +1,10 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { commentsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { showSuccess, showError, showConfirm } from '../utils/sweetAlert';
 import { FiSend, FiEdit, FiTrash2, FiUser } from 'react-icons/fi';
 
-const Comments = ({ postSlug }) => {
+const Comments = ({ postSlug, post }) => {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
@@ -96,22 +96,46 @@ const Comments = ({ postSlug }) => {
     const date = new Date(dateString);
     const now = new Date();
     const diff = Math.floor((now - date) / 1000);
-    if (diff < 60) return 'Just now';    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const canDeleteComment = (comment) => {
+    if (!user) return false;
+    return user.id === comment.user.id || (post && user.id === post.user.id);
+  };
+
+  const canEditComment = (comment) => {
+    if (!user) return false;
+    return user.id === comment.user.id;
   };
 
   return (
     <section className="mt-12 glass-effect p-6 sm:p-8 rounded-xl shadow-soft">
       <h2 className="text-2xl font-bold gradient-text mb-6">Comments ({comments.length})</h2>
+      
       {user ? (
         <form onSubmit={handleSubmit} className="mb-8">
           <div className="relative">
-            <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Write a comment..." className="input-field w-full min-h-[100px] resize-none pr-12" maxLength={1000} disabled={submitting} />
+            <textarea 
+              value={newComment} 
+              onChange={(e) => setNewComment(e.target.value)} 
+              placeholder="Write a comment..." 
+              className="input-field w-full min-h-[100px] resize-none pr-12" 
+              maxLength={1000} 
+              disabled={submitting} 
+            />
             <div className="absolute bottom-3 right-3 text-xs text-gray-400">{newComment.length}/1000</div>
           </div>
           <div className="flex justify-end mt-3">
-            <button type="submit" disabled={submitting || !newComment.trim()} className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button 
+              type="submit" 
+              disabled={submitting || !newComment.trim()} 
+              className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <FiSend className="w-4 h-4" />
               {submitting ? 'Posting...' : 'Post Comment'}
             </button>
@@ -122,12 +146,15 @@ const Comments = ({ postSlug }) => {
           <p className="text-gray-700">Please login to leave a comment</p>
         </div>
       )}
+      
       {loading ? (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
         </div>
       ) : comments.length === 0 ? (
-        <div className="text-center py-8 text-gray-500"><p>No comments yet. Be the first to comment!</p></div>
+        <div className="text-center py-8 text-gray-500">
+          <p>No comments yet. Be the first to comment!</p>
+        </div>
       ) : (
         <div className="space-y-4">
           {comments.map((comment) => (
@@ -142,10 +169,18 @@ const Comments = ({ postSlug }) => {
                       <p className="font-semibold text-gray-900">{comment.user.name}</p>
                       <p className="text-xs text-gray-500">{formatDate(comment.created_at)}</p>
                     </div>
-                    {user && user.id === comment.user.id && (
+                    {(canEditComment(comment) || canDeleteComment(comment)) && (
                       <div className="flex gap-2">
-                        <button onClick={() => handleEdit(comment)} className="text-blue-600 hover:text-blue-700 p-1" title="Edit"><FiEdit className="w-4 h-4" /></button>
-                        <button onClick={() => handleDelete(comment.id)} className="text-red-600 hover:text-red-700 p-1" title="Delete"><FiTrash2 className="w-4 h-4" /></button>
+                        {canEditComment(comment) && (
+                          <button onClick={() => handleEdit(comment)} className="text-blue-600 hover:text-blue-700 p-1" title="Edit">
+                            <FiEdit className="w-4 h-4" />
+                          </button>
+                        )}
+                        {canDeleteComment(comment) && (
+                          <button onClick={() => handleDelete(comment.id)} className="text-red-600 hover:text-red-700 p-1" title="Delete">
+                            <FiTrash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

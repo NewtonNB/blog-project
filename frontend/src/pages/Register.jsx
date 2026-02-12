@@ -155,7 +155,7 @@ const Register = () => {
             Full Name <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <FiUser className="h-5 w-5 text-gray-400" />
             </div>
             <input
@@ -164,7 +164,7 @@ const Register = () => {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className={`input-field pl-12 ${
+              className={`input-field-with-icon ${
                 errors.name
                   ? 'border-red-500 focus:border-red-500 focus:ring-red-100'
                   : ''
@@ -183,7 +183,7 @@ const Register = () => {
             Email Address <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <FiMail className="h-5 w-5 text-gray-400" />
             </div>
             <input
@@ -192,7 +192,7 @@ const Register = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className={`input-field pl-12 ${
+              className={`input-field-with-icon ${
                 errors.email
                   ? 'border-red-500 focus:border-red-500 focus:ring-red-100'
                   : ''
@@ -234,7 +234,7 @@ const Register = () => {
             Password <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <FiLock className="h-5 w-5 text-gray-400" />
             </div>
             <input
@@ -243,7 +243,7 @@ const Register = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className={`input-field pl-12 ${
+              className={`input-field-with-icon ${
                 errors.password
                   ? 'border-red-500 focus:border-red-500 focus:ring-red-100'
                   : ''
@@ -265,7 +265,7 @@ const Register = () => {
             Confirm Password <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <FiLock className="h-5 w-5 text-gray-400" />
             </div>
             <input
@@ -274,7 +274,7 @@ const Register = () => {
               name="password_confirmation"
               value={formData.password_confirmation}
               onChange={handleChange}
-              className={`input-field pl-12 ${
+              className={`input-field-with-icon ${
                 errors.password_confirmation
                   ? 'border-red-500 focus:border-red-500 focus:ring-red-100'
                   : ''
@@ -293,7 +293,7 @@ const Register = () => {
             Bio (Optional)
           </label>
           <div className="relative">
-            <div className="absolute top-3 left-0 pl-3 pointer-events-none">
+            <div className="absolute top-3 left-0 pl-4 pointer-events-none">
               <FiFileText className="h-5 w-5 text-gray-400" />
             </div>
             <textarea
@@ -303,7 +303,7 @@ const Register = () => {
               onChange={handleChange}
               rows={3}
               maxLength={1000}
-              className={`input-field pl-12 ${
+              className={`input-field-with-icon ${
                 errors.bio
                   ? 'border-red-500 focus:border-red-500 focus:ring-red-100'
                   : ''

@@ -201,7 +201,7 @@ const PostDetail = () => {
       </footer>
 
       {/* Comments Section */}
-      <Comments postSlug={post.slug} />
+      <Comments postSlug={post.slug} post={post} />
     </article>
   );
 };

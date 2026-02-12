@@ -22,8 +22,44 @@ const CreatePost = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('auth_token');
+    const user = localStorage.getItem('user');
+    console.log('Auth token:', token);
+    console.log('User:', user);
+    
+    if (!token || !user) {
+      console.error('No authentication found!');
+      setServerError('You must be logged in to create a post. Please login again.');
+      navigate('/login');
+      return;
+    }
+    
+    // Test authentication with debug endpoint
+    testAuthentication();
     fetchCategories();
   }, []);
+
+  const testAuthentication = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/debug/auth', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Accept': 'application/json',
+        }
+      });
+      const data = await response.json();
+      console.log('Auth test response:', data);
+      
+      if (!data.user) {
+        console.error('Authentication failed - token may be invalid or expired');
+        setServerError('Your session has expired. Please login again.');
+        setTimeout(() => navigate('/login'), 2000);
+      }
+    } catch (error) {
+      console.error('Auth test error:', error);
+    }
+  };
 
   const fetchCategories = async () => {
     try {
@@ -206,7 +242,12 @@ const CreatePost = () => {
         category_id: parseInt(formData.category_id),
       };
 
+      console.log('Submitting post data:', postData);
+      console.log('Auth token:', localStorage.getItem('auth_token'));
+      
       const response = await postsAPI.create(postData);
+      console.log('Response:', response);
+      
       if (response.success) {
         showSuccess('Post Created!', 'Your post has been created successfully.');
         setTimeout(() => {
@@ -214,10 +255,28 @@ const CreatePost = () => {
         }, 1500);
       }
     } catch (err) {
+      console.error('Error creating post:', err);
+      console.error('Error response:', err.response);
+      console.error('Error response data:', err.response?.data);
+      console.error('Error response status:', err.response?.status);
+      
+      // Handle authentication errors
+      if (err.response?.status === 401) {
+        setServerError('Your session has expired. Please login again.');
+        setTimeout(() => {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('user');
+          navigate('/login');
+        }, 2000);
+        return;
+      }
+      
       if (err.response?.data?.errors) {
         setErrors(err.response.data.errors);
+        setServerError('Please fix the validation errors below');
       } else {
-        setServerError(err.response?.data?.message || 'Failed to create post');
+        const errorMsg = err.response?.data?.message || err.message || 'Failed to create post';
+        setServerError(errorMsg);
       }
     } finally {
       setLoading(false);

@@ -88,9 +88,10 @@ class CommentController extends Controller
     public function destroy($id)
     {
         $comment = Comment::findOrFail($id);
+        $comment->load('post');
 
-        // Check if user owns the comment
-        if ($comment->user_id !== Auth::id()) {
+        // Check if user owns the comment OR owns the post (post author can delete any comment on their post)
+        if ($comment->user_id !== Auth::id() && $comment->post->user_id !== Auth::id()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized',
